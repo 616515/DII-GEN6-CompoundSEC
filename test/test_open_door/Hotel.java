@@ -1,6 +1,4 @@
-package test;
-import test.Card;
-import test.Room;
+package test.test_open_door;
 import java.util.HashMap;
 import java.util.Map;
 

@@ -1,8 +1,5 @@
-package test;
+package test.test_open_door;
 
-import project.Hotel;
-import project.Card;
-import project.Room;
 import java.util.Scanner;
 
 public class main {

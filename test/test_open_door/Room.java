@@ -1,4 +1,4 @@
-package test;
+package test.test_open_door;
 
 public class Room {
     private int roomNumber;
