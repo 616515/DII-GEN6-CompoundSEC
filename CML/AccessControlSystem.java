@@ -1,16 +1,28 @@
 package CML;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 // Singleton Pattern
-class AccessControlSystem {
+public class AccessControlSystem {
     private static AccessControlSystem instance;
     private Map<String, Card> cards = new HashMap<>();
     private Map<String, User> users = new HashMap<>();
     private List<AccessLog> accessLogs = new ArrayList<>();
     private List<CardManagementLog> cardManagementLogs = new ArrayList<>();
+    private Building building = new Building();
+    private Map<String, List<Room>> floors; // Key: floor level (low, medium, high), Value: List of rooms
 
-    private AccessControlSystem() {} // Private constructor
+    private AccessControlSystem() {
+        // Initialize floors
+        floors = new HashMap<>();
+        floors.put("low", new ArrayList<>());
+        floors.put("medium", new ArrayList<>());
+        floors.put("high", new ArrayList<>());
+    }
 
     public static AccessControlSystem getInstance() {
         if (instance == null) {
@@ -117,6 +129,38 @@ class AccessControlSystem {
         System.out.println("Viewing card management logs within date range: " + dateRange);
         for (CardManagementLog log : cardManagementLogs) {
             System.out.println(log);
+        }
+    }
+
+    // Building Management
+    public void addRoomsToFloor(String floorLevel, int numberOfRooms) {
+        if (!floors.containsKey(floorLevel)) {
+            System.out.println("Invalid floor level!");
+            return;
+        }
+        List<Room> rooms = floors.get(floorLevel);
+        for (int i = 1; i <= numberOfRooms; i++) {
+            rooms.add(new Room(rooms.size() + 1));
+        }
+        System.out.println("Added " + numberOfRooms + " rooms to " + floorLevel + " floor.");
+    }
+
+    public void deleteRoom(String floorLevel, int roomNumber) {
+        if (!floors.containsKey(floorLevel)) {
+            System.out.println("Invalid floor level!");
+            return;
+        }
+        List<Room> rooms = floors.get(floorLevel);
+        rooms.removeIf(room -> room.getRoomNumber() == roomNumber);
+        System.out.println("Deleted room " + roomNumber + " from " + floorLevel + " floor.");
+    }
+
+    public void printBuilding() {
+        for (Map.Entry<String, List<Room>> entry : floors.entrySet()) {
+            System.out.println("Floor: " + entry.getKey());
+            for (Room room : entry.getValue()) {
+                System.out.println("  Room: " + room.getRoomNumber());
+            }
         }
     }
 }
