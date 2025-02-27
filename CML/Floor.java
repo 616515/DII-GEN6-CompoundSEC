@@ -11,7 +11,7 @@ public class Floor {
         this.floorNumber = floorNumber;
         this.rooms = new ArrayList<>();
         for (int i = 1; i <= numberOfRooms; i++) {
-            rooms.add(new Room(i));
+            rooms.add(new Room(i, i, floorNumber));
         }
     }
 
@@ -25,7 +25,7 @@ public class Floor {
 
     public void addRooms(int numberOfRooms) {
         for (int i = 1; i <= numberOfRooms; i++) {
-            rooms.add(new Room(rooms.size() + 1));
+            rooms.add(new Room(rooms.size() + 1, i, floorNumber));
         }
     }
 

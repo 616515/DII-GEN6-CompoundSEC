@@ -13,15 +13,11 @@ public class AccessControlSystem {
     private Map<String, User> users = new HashMap<>();
     private List<AccessLog> accessLogs = new ArrayList<>();
     private List<CardManagementLog> cardManagementLogs = new ArrayList<>();
-    private Building building = new Building();
-    private Map<String, List<Room>> floors; // Key: floor level (low, medium, high), Value: List of rooms
+    private Map<Integer, List<Room>> floors; // Key: floor number, Value: List of rooms
+    private int nextUserId = 1;
 
     private AccessControlSystem() {
-        // Initialize floors
         floors = new HashMap<>();
-        floors.put("low", new ArrayList<>());
-        floors.put("medium", new ArrayList<>());
-        floors.put("high", new ArrayList<>());
     }
 
     public static AccessControlSystem getInstance() {
@@ -32,14 +28,27 @@ public class AccessControlSystem {
     }
 
     // Card Management
-    public String addCard(String userId, String accessLevel, String validityPeriod) {
+    public String addCard(String userId, String validityPeriod) {
+        if (!users.containsKey(userId)) {
+            System.out.println("User not found!");
+            return null;
+        }
+
+        User user = users.get(userId);
+        String accessLevel = "low"; // Default for customer
+        if (user.getRole().equals("staff")) {
+            accessLevel = "medium";
+        } else if (user.getRole().equals("admin")) {
+            accessLevel = "high";
+        }
+
         String cardId = UUID.randomUUID().toString();
         cards.put(cardId, new Card(cardId, userId, accessLevel, validityPeriod));
-        cardManagementLogs.add(new CardManagementLog(cardId, "ADD", System.currentTimeMillis()));
         System.out.println("Card added: " + cardId);
         return cardId;
     }
 
+    // modifyCard
     public void modifyCard(String cardId, String accessLevel, String validityPeriod) {
         if (cards.containsKey(cardId)) {
             Card card = cards.get(cardId);
@@ -87,13 +96,16 @@ public class AccessControlSystem {
     }
 
     // User Management
-    public String addUser(String name, String role, String contactInfo) {
-        String userId = UUID.randomUUID().toString();
-        users.put(userId, new User(userId, name, role, contactInfo));
+    public String addUser(String name, String role, String contact) {
+        String userId = String.format("%03d", nextUserId++); // Generate 3-digit user ID
+        String userCard = UUID.randomUUID().toString(); // Generate user card
+        users.put(userId, new User(userId, name, role, contact, userCard));
         System.out.println("User added: " + userId);
+        System.out.println("User card: " + userCard); // Show user card to user
         return userId;
     }
 
+    // modifyUser
     public void modifyUser(String userId, String name, String role, String contactInfo) {
         if (users.containsKey(userId)) {
             User user = users.get(userId);
@@ -106,6 +118,7 @@ public class AccessControlSystem {
         }
     }
 
+    // deleteUser
     public void deleteUser(String userId) {
         if (users.containsKey(userId)) {
             users.remove(userId);
@@ -113,6 +126,17 @@ public class AccessControlSystem {
         } else {
             System.out.println("User not found");
         }
+    }
+
+    // checkRoomAccess
+    public boolean checkRoomAccess(String userId, String userCard, String contactInfo) {
+        if (users.containsKey(userId)) {
+            User user = users.get(userId);
+            if (user.getUserCard().equals(userCard) && user.getContact().equals(contactInfo)) {
+                return true; // Access granted
+            }
+        }
+        return false; // Access denied
     }
 
     // Audit and Reporting
@@ -133,34 +157,74 @@ public class AccessControlSystem {
     }
 
     // Building Management
-    public void addRoomsToFloor(String floorLevel, int numberOfRooms) {
-        if (!floors.containsKey(floorLevel)) {
-            System.out.println("Invalid floor level!");
-            return;
-        }
-        List<Room> rooms = floors.get(floorLevel);
+    public void addRoomsToFloor(int floorNumber, int numberOfRooms) {
+        List<Room> rooms = floors.getOrDefault(floorNumber, new ArrayList<>());
         for (int i = 1; i <= numberOfRooms; i++) {
-            rooms.add(new Room(rooms.size() + 1));
+            rooms.add(new Room(floorNumber, i, "low")); // Default status is low
         }
-        System.out.println("Added " + numberOfRooms + " rooms to " + floorLevel + " floor.");
+        floors.put(floorNumber, rooms);
+        System.out.println("Added " + numberOfRooms + " rooms to floor " + floorNumber + ".");
     }
 
-    public void deleteRoom(String floorLevel, int roomNumber) {
-        if (!floors.containsKey(floorLevel)) {
-            System.out.println("Invalid floor level!");
-            return;
+    // changeRoomStatus
+    public void changeRoomStatus(int roomCode, String newStatus) {
+        int floorNumber = roomCode / 100; // Extract floor number
+        int roomNumber = roomCode % 100; // Extract room number
+
+        if (floors.containsKey(floorNumber)) {
+            List<Room> rooms = floors.get(floorNumber);
+            for (Room room : rooms) {
+                if (room.getRoomNumber() == roomNumber) {
+                    room.setStatus(newStatus);
+                    System.out.println("Changed status of room " + roomCode + " to " + newStatus + ".");
+                    return;
+                }
+            }
+            System.out.println("Room " + roomCode + " not found.");
+        } else {
+            System.out.println("Floor " + floorNumber + " not found.");
         }
-        List<Room> rooms = floors.get(floorLevel);
-        rooms.removeIf(room -> room.getRoomNumber() == roomNumber);
-        System.out.println("Deleted room " + roomNumber + " from " + floorLevel + " floor.");
     }
 
+    // deleteRoom
+    public void deleteRoom(int roomCode) {
+        int floorNumber = roomCode / 100; // Extract floor number
+        int roomNumber = roomCode % 100; // Extract room number
+
+        if (floors.containsKey(floorNumber)) {
+            List<Room> rooms = floors.get(floorNumber);
+            if (roomNumber == 0) { // Delete entire floor
+                floors.remove(floorNumber);
+                System.out.println("Deleted floor " + floorNumber + ".");
+            } else { // Delete specific room
+                rooms.removeIf(room -> room.getRoomNumber() == roomNumber);
+                System.out.println("Deleted room " + roomCode + ".");
+            }
+        } else {
+            System.out.println("Floor " + floorNumber + " not found.");
+        }
+    }
+
+    // printBuilding
     public void printBuilding() {
-        for (Map.Entry<String, List<Room>> entry : floors.entrySet()) {
+        for (Map.Entry<Integer, List<Room>> entry : floors.entrySet()) {
             System.out.println("Floor: " + entry.getKey());
             for (Room room : entry.getValue()) {
-                System.out.println("  Room: " + room.getRoomNumber());
+                System.out.println("  " + room);
             }
         }
+    }
+
+    // addMultipleFloors
+    public void addMultipleFloors(int startFloor, int endFloor, int roomsPerFloor) {
+        for (int floorNumber = startFloor; floorNumber <= endFloor; floorNumber++) {
+            List<Room> rooms = new ArrayList<>();
+            for (int i = 1; i <= roomsPerFloor; i++) {
+                rooms.add(new Room(floorNumber, i, "low")); // Default status is low
+            }
+            floors.put(floorNumber, rooms);
+        }
+        System.out
+                .println("Added floors " + startFloor + " to " + endFloor + " with " + roomsPerFloor + " rooms each.");
     }
 }
