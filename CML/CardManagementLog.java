@@ -11,6 +11,10 @@ public class CardManagementLog {
         this.timestamp = timestamp;
     }
 
+    public String getCardId() {
+        return cardId;
+    }
+
     @Override
     public String toString() {
         return "CardManagementLog{" +

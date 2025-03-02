@@ -4,15 +4,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Floor {
-    private String floorNumber; // low, medium, high
+    private String floorNumber;
     private List<Room> rooms;
 
-    public Floor(String floorNumber, int numberOfRooms) {
+    public Floor(String floorNumber, int initialRooms) {
         this.floorNumber = floorNumber;
         this.rooms = new ArrayList<>();
-        for (int i = 1; i <= numberOfRooms; i++) {
-            rooms.add(new Room(i, i, floorNumber));
-        }
+        addRooms(initialRooms);
     }
 
     public String getFloorNumber() {
@@ -25,19 +23,11 @@ public class Floor {
 
     public void addRooms(int numberOfRooms) {
         for (int i = 1; i <= numberOfRooms; i++) {
-            rooms.add(new Room(rooms.size() + 1, i, floorNumber));
+            rooms.add(new Room(i, "low")); // Default status is "low"
         }
     }
 
     public void deleteRoom(int roomNumber) {
         rooms.removeIf(room -> room.getRoomNumber() == roomNumber);
-    }
-
-    @Override
-    public String toString() {
-        return "Floor{" +
-                "floorNumber='" + floorNumber + '\'' +
-                ", rooms=" + rooms +
-                '}';
     }
 }

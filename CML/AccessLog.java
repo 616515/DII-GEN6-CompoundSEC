@@ -5,19 +5,32 @@ public class AccessLog {
     private String floorLevel;
     private String roomNumber;
     private long timestamp;
+    private boolean accessGranted;
 
     public AccessLog(String cardId, String floorLevel, String roomNumber, long timestamp) {
         this.cardId = cardId;
         this.floorLevel = floorLevel;
         this.roomNumber = roomNumber;
         this.timestamp = timestamp;
+        this.accessGranted = accessGranted;
     }
 
     // Getters
-    public String getCardId() { return cardId; }
-    public String getFloorLevel() { return floorLevel; }
-    public String getRoomNumber() { return roomNumber; }
-    public long getTimestamp() { return timestamp; }
+    public String getCardId() {
+        return cardId;
+    }
+
+    public String getFloorLevel() {
+        return floorLevel;
+    }
+
+    public String getRoomNumber() {
+        return roomNumber;
+    }
+
+    public long getTimestamp() {
+        return timestamp;
+    }
 
     @Override
     public String toString() {

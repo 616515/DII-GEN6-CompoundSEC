@@ -1,18 +1,12 @@
 package CML;
 
 public class Room {
-    private int floorNumber;
     private int roomNumber;
-    private String status; // low, medium, high
+    private String status;
 
-    public Room(int floorNumber, int roomNumber, String status) {
-        this.floorNumber = floorNumber;
+    public Room(int roomNumber, String status) {
         this.roomNumber = roomNumber;
         this.status = status;
-    }
-
-    public int getFloorNumber() {
-        return floorNumber;
     }
 
     public int getRoomNumber() {
@@ -29,6 +23,6 @@ public class Room {
 
     @Override
     public String toString() {
-        return "floor" + floorNumber + " classroom " + roomNumber + " " + status;
+        return "Classroom " + roomNumber + " - Status: " + status;
     }
 }

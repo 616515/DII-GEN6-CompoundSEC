@@ -9,9 +9,9 @@ public class Building {
     public Building() {
         this.floors = new ArrayList<>();
         // Initialize with low, medium, high floors
-        floors.add(new Floor("low", 0));
-        floors.add(new Floor("medium", 0));
-        floors.add(new Floor("high", 0));
+        floors.add(new Floor("1", 3)); // Example initialization
+        floors.add(new Floor("2", 3)); // Example initialization
+        floors.add(new Floor("3", 3)); // Example initialization
     }
 
     public void addRoomsToFloor(String floorNumber, int numberOfRooms) {
@@ -34,9 +34,14 @@ public class Building {
         System.out.println("Floor not found!");
     }
 
+    // Print all rooms in the building
     public void printBuilding() {
         for (Floor floor : floors) {
-            System.out.println(floor);
+            System.out.println("Floor: " + floor.getFloorNumber());
+            for (Room room : floor.getRooms()) {
+                System.out.println("  " + room);
+            }
+            System.out.println();
         }
     }
 
