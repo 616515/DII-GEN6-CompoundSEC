@@ -7,10 +7,12 @@ public class Floor {
     private String floorNumber;
     private List<Room> rooms;
 
-    public Floor(String floorNumber, int initialRooms) {
+    public Floor(String floorNumber, int numberOfRooms) {
         this.floorNumber = floorNumber;
-        this.rooms = new ArrayList<>();
-        addRooms(initialRooms);
+        this.rooms = new ArrayList<>(numberOfRooms);
+        for (int i = 1; i <= numberOfRooms; i++) {
+            rooms.add(new Room(i, "low")); // Default status is "low"
+        }
     }
 
     public String getFloorNumber() {
@@ -22,16 +24,18 @@ public class Floor {
     }
 
     public Room getRoom(int roomNumber) {
-        return rooms.get(roomNumber);
-    }
-
-    public void addRooms(int numberOfRooms) {
-        for (int i = 1; i <= numberOfRooms; i++) {
-            rooms.add(new Room(i, "low")); // Default status is "low"
+        if (roomNumber < 1 || roomNumber > rooms.size()) {
+            System.out.println("Room number " + roomNumber + " is out of bounds.");
+            return null;
         }
+        return rooms.get(roomNumber - 1);
     }
 
     public void deleteRoom(int roomNumber) {
-        rooms.removeIf(room -> room.getRoomNumber() == roomNumber);
+        if (roomNumber < 1 || roomNumber > rooms.size()) {
+            System.out.println("Room number " + roomNumber + " is out of bounds.");
+            return;
+        }
+        rooms.remove(roomNumber - 1);
     }
 }

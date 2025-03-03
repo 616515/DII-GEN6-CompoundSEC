@@ -250,7 +250,9 @@ public class Main {
                         int endFloor = scanner.nextInt();
                         System.out.print("Enter number of rooms per floor: ");
                         int roomsPerFloor = scanner.nextInt();
-                        system.addMultipleFloors(startFloor, endFloor, roomsPerFloor);
+                        for (int i = startFloor; i <= endFloor; i++) {
+                            system.addRoomsToFloor(i, roomsPerFloor);
+                        }
                         break;
 
                     case 3: // Change Room Status
@@ -359,12 +361,8 @@ public class Main {
 
                 switch (testChoice) {
                     case 1: // Test Room Access
-                        System.out.print("Enter user ID: ");
-                        String userId = scanner.nextLine();
                         System.out.print("Enter user card: ");
                         String userCard = scanner.nextLine();
-                        System.out.print("Enter contact info: ");
-                        String contactInfo = scanner.nextLine();
                         System.out.print("Enter accessible floor number level: ");
                         int floorNumber = scanner.nextInt();
                         System.out.print("Enter accessible room number level: ");
@@ -372,7 +370,7 @@ public class Main {
                         scanner.nextLine(); // Consume newline
 
                         // เรียกเมธอด checkRoomAccess ด้วยข้อมูลที่แปลงแล้ว
-                        if (system.checkRoomAccess(userId, userCard, contactInfo, floorNumber, roomNumber)) {
+                        if (system.checkRoomAccess(userCard, floorNumber, roomNumber)) {
                             System.out.println("Access granted.");
                         } else {
                             System.out.println("Access denied.");

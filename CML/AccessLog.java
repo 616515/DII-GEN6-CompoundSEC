@@ -1,18 +1,19 @@
 package CML;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
 public class AccessLog {
     private String cardId;
     private String floorLevel;
     private String roomNumber;
     private long timestamp;
-    private boolean accessGranted;
 
     public AccessLog(String cardId, String floorLevel, String roomNumber, long timestamp) {
         this.cardId = cardId;
         this.floorLevel = floorLevel;
         this.roomNumber = roomNumber;
         this.timestamp = timestamp;
-        this.accessGranted = accessGranted;
     }
 
     // Getters
@@ -34,11 +35,12 @@ public class AccessLog {
 
     @Override
     public String toString() {
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         return "AccessLog{" +
                 "cardId='" + cardId + '\'' +
                 ", floorLevel='" + floorLevel + '\'' +
                 ", roomNumber='" + roomNumber + '\'' +
-                ", timestamp=" + timestamp +
+                ", timestamp=" + sdf.format(new Date(timestamp)) +
                 '}';
     }
 }

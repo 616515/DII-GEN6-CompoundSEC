@@ -95,7 +95,7 @@ public class AccessControlSystem {
     // Access Control
     public void checkAccess(String cardId, String floorLevel, String roomNumber) {
         if (!floorLevel.matches("low|medium|high")) {
-            System.out.println("Access denied: Invalid floor level");
+            System.out.println("Invalid floor level");
             return;
         }
 
@@ -106,25 +106,18 @@ public class AccessControlSystem {
             // ตรวจสอบระดับการเข้าถึงของห้อง
             String roomStatus = getRoomStatus(floorLevel, roomNumber);
             if (roomStatus == null) {
-                System.out.println("Access denied: Room not found");
+                System.out.println("Room not found");
                 return;
             }
 
             // ตรวจสอบเงื่อนไขการเข้าถึง
-            if (accessLevel.equals("high")) {
-                // high สามารถเข้าถึงทุกห้อง
-                accessLogs.add(new AccessLog(cardId, floorLevel, roomNumber, System.currentTimeMillis()));
-                System.out.println("Access granted for high level");
-            } else if (accessLevel.equals("medium") && (roomStatus.equals("low") || roomStatus.equals("medium"))) {
-                // medium สามารถเข้าถึงห้อง low และ medium
-                accessLogs.add(new AccessLog(cardId, floorLevel, roomNumber, System.currentTimeMillis()));
-                System.out.println("Access granted for medium level");
-            } else if (accessLevel.equals("low") && roomStatus.equals("low")) {
-                // low สามารถเข้าถึงห้อง low เท่านั้น
-                accessLogs.add(new AccessLog(cardId, floorLevel, roomNumber, System.currentTimeMillis()));
-                System.out.println("Access granted for low level");
+            if (accessLevel.equals("high") ||
+                    (accessLevel.equals("medium") && (roomStatus.equals("low") || roomStatus.equals("medium"))) ||
+                    (accessLevel.equals("low") && roomStatus.equals("low"))) {
+                System.out.println("Access granted.");
+                logAccess(cardId, floorLevel, roomNumber, System.currentTimeMillis());
             } else {
-                System.out.println("Access denied: Access level mismatch");
+                System.out.println("Access denied: Insufficient access level");
             }
         } else {
             System.out.println("Access denied: Card not found");
@@ -184,15 +177,14 @@ public class AccessControlSystem {
     }
 
     // checkRoomAccess
-    public boolean checkRoomAccess(String userId, String userCard, String contactInfo, int floorNumber,
-            int roomNumber) {
-        User user = users.get(userId);
-        if (user == null || !user.getUserCard().equals(userCard) || !user.getContact().equals(contactInfo)) {
+    public boolean checkRoomAccess(String userCard, int floorNumber, int roomNumber) {
+        Card card = cards.get(userCard);
+        if (card == null) {
             return false;
         }
 
-        Card card = cards.get(userCard);
-        if (card == null || !card.getUserId().equals(userId)) {
+        User user = users.get(card.getUserId());
+        if (user == null) {
             return false;
         }
 
@@ -305,14 +297,17 @@ public class AccessControlSystem {
 
     // Building Management
     public void addRoomsToFloor(int floorNumber, int numberOfRooms) {
-        Floor floor = floors.getOrDefault(floorNumber, new Floor(String.valueOf(floorNumber), 0));
-        floor.addRooms(numberOfRooms);
-        floors.put(floorNumber, floor);
-        for (Room room : floor.getRooms()) {
-            String roomKey = String.format("%d%02d", floorNumber, room.getRoomNumber());
-            rooms.put(roomKey, room); // Update the rooms map
+        Floor floor = floors.get(floorNumber);
+        if (floor == null) {
+            floor = new Floor(String.valueOf(floorNumber), numberOfRooms);
+            floors.put(floorNumber, floor);
         }
-        System.out.println("Added " + numberOfRooms + " rooms to floor " + floorNumber + ".");
+
+        for (int i = 1; i <= numberOfRooms; i++) {
+            Room room = new Room(i, "low"); // Default status is "low"
+            floor.getRooms().add(room);
+        }
+        System.out.println("Added " + numberOfRooms + " rooms to floor " + floorNumber);
     }
 
     // changeRoomStatus
