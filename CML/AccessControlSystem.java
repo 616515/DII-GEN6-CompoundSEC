@@ -1,5 +1,7 @@
 package CML;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -13,7 +15,7 @@ public class AccessControlSystem {
     private Map<String, User> users = new HashMap<>();
     private List<AccessLog> accessLogs = new ArrayList<>();
     private List<CardManagementLog> cardManagementLogs = new ArrayList<>();
-    private Map<Integer, Floor> floors; // Key: floor number, Value: Floor object
+    private Map<Integer, Floor> floors = new HashMap<>();
     private Map<String, Room> rooms = new HashMap<>(); // เพิ่มการเก็บข้อมูลห้อง
     private int nextUserId = 1;
     private int nextCardId = 1;
@@ -50,10 +52,13 @@ public class AccessControlSystem {
             throw new IllegalArgumentException("Invalid user role");
         }
 
-        String cardId = String.format("%03d", nextCardId++); // ใช้ตัวแปร nextCardId เพื่อสร้าง cardId
-                                                             // ที่เป็นตัวเลขเรียงลำดับ
+        String cardId = String.format("%03d", nextCardId++); // สร้าง cardId
 
         cards.put(cardId, new Card(cardId, userId, accessLevel, validityPeriod, multiFacadesId, accessibleRoom));
+
+        // บันทึกล็อกเมื่อเพิ่มการ์ด
+        cardManagementLogs.add(new CardManagementLog(cardId, "ADD", System.currentTimeMillis()));
+
         System.out.println("Card added: " + cardId);
         return cardId;
     }
@@ -64,7 +69,10 @@ public class AccessControlSystem {
             Card card = cards.get(cardId);
             card.setAccessLevel(accessLevel);
             card.setValidityPeriod(validityPeriod);
+
+            // บันทึกล็อกเมื่อแก้ไขการ์ด
             cardManagementLogs.add(new CardManagementLog(cardId, "MODIFY", System.currentTimeMillis()));
+
             System.out.println("Card modified: " + cardId);
         } else {
             System.out.println("Card not found");
@@ -74,7 +82,10 @@ public class AccessControlSystem {
     public void revokeCard(String cardId) {
         if (cards.containsKey(cardId)) {
             cards.remove(cardId);
+
+            // บันทึกล็อกเมื่อยกเลิกการ์ด
             cardManagementLogs.add(new CardManagementLog(cardId, "REVOKE", System.currentTimeMillis()));
+
             System.out.println("Card revoked: " + cardId);
         } else {
             System.out.println("Card not found");
@@ -90,25 +101,49 @@ public class AccessControlSystem {
 
         if (cards.containsKey(cardId)) {
             Card card = cards.get(cardId);
-            AccessStrategy strategy = new StandardAccessStrategy(); // Default strategy
-            if (card.getAccessLevel().equals("high")) {
-                strategy = new HighSecurityAccessStrategy(); // Change strategy
+            String accessLevel = card.getAccessLevel();
+
+            // ตรวจสอบระดับการเข้าถึงของห้อง
+            String roomStatus = getRoomStatus(floorLevel, roomNumber);
+            if (roomStatus == null) {
+                System.out.println("Access denied: Room not found");
+                return;
             }
 
-            // ตรวจสอบ Multi-Facades ID
-            if (card.getMultiFacadesId() != null && !card.getMultiFacadesId().isEmpty()) {
-                System.out.println("Multi-Facades ID: " + card.getMultiFacadesId());
-            }
-
-            if (strategy.checkAccess(card, floorLevel)) {
+            // ตรวจสอบเงื่อนไขการเข้าถึง
+            if (accessLevel.equals("high")) {
+                // high สามารถเข้าถึงทุกห้อง
                 accessLogs.add(new AccessLog(cardId, floorLevel, roomNumber, System.currentTimeMillis()));
-                System.out.println("Access granted");
+                System.out.println("Access granted for high level");
+            } else if (accessLevel.equals("medium") && (roomStatus.equals("low") || roomStatus.equals("medium"))) {
+                // medium สามารถเข้าถึงห้อง low และ medium
+                accessLogs.add(new AccessLog(cardId, floorLevel, roomNumber, System.currentTimeMillis()));
+                System.out.println("Access granted for medium level");
+            } else if (accessLevel.equals("low") && roomStatus.equals("low")) {
+                // low สามารถเข้าถึงห้อง low เท่านั้น
+                accessLogs.add(new AccessLog(cardId, floorLevel, roomNumber, System.currentTimeMillis()));
+                System.out.println("Access granted for low level");
             } else {
-                System.out.println("Access denied: Invalid floor level");
+                System.out.println("Access denied: Access level mismatch");
             }
         } else {
             System.out.println("Access denied: Card not found");
         }
+    }
+
+    private String getRoomStatus(String floorLevel, String roomNumber) {
+        int floorNum = Integer.parseInt(floorLevel.replaceAll("[^0-9]", ""));
+        int roomNum = Integer.parseInt(roomNumber);
+
+        if (floors.containsKey(floorNum)) {
+            Floor floor = floors.get(floorNum);
+            for (Room room : floor.getRooms()) {
+                if (room.getRoomNumber() == roomNum) {
+                    return room.getStatus();
+                }
+            }
+        }
+        return null; // ห้องไม่พบ
     }
 
     // logAccess
@@ -149,44 +184,47 @@ public class AccessControlSystem {
     }
 
     // checkRoomAccess
-    public boolean checkRoomAccess(String userId, String userCard, String contactInfo, String roomNumber) {
-        if (users.containsKey(userId)) {
-            User user = users.get(userId);
-            if (user.getUserCard().equals(userCard) && user.getContact().equals(contactInfo)) {
-                Card card = cards.get(userCard);
-                if (card != null && card.getUserId().equals(userId)) {
-                    // Check if the card has access to the room
-                    return checkCardAccessToRoom(card, roomNumber);
-                }
-            }
+    public boolean checkRoomAccess(String userId, String userCard, String contactInfo, int floorNumber,
+            int roomNumber) {
+        User user = users.get(userId);
+        if (user == null || !user.getUserCard().equals(userCard) || !user.getContact().equals(contactInfo)) {
+            return false;
         }
-        return false; // Access denied
+
+        Card card = cards.get(userCard);
+        if (card == null || !card.getUserId().equals(userId)) {
+            return false;
+        }
+
+        return checkCardAccessToRoom(card, floorNumber, roomNumber);
     }
 
-    // checkCardAccessToRoom
-    private boolean checkCardAccessToRoom(Card card, String roomNumber) {
-        // ตรวจสอบว่าห้องมีอยู่หรือไม่
-        if (!rooms.containsKey(roomNumber)) {
+    private boolean checkCardAccessToRoom(Card card, int floorNumber, int roomNumber) {
+        Floor floor = floors.get(floorNumber);
+        if (floor == null) {
+            System.out.println("Floor not found.");
+            return false;
+        }
+
+        Room room = floor.getRoom(roomNumber);
+        if (room == null) {
             System.out.println("Room not found.");
             return false;
         }
 
-        Room room = rooms.get(roomNumber);
         String accessLevel = card.getAccessLevel();
         String roomStatus = room.getStatus();
 
-        // Assuming accessLevel "high" can access all rooms, "medium" can access certain
-        // rooms, etc.
-        if (accessLevel.equals("high")) {
-            return true;
-        } else if (accessLevel.equals("medium")) {
-            // Implement your logic for medium access level
-            return roomStatus.equals("medium") || roomStatus.equals("low");
-        } else if (accessLevel.equals("low")) {
-            // Implement your logic for low access level
-            return roomStatus.equals("low") && card.getAccessibleRoom().equals(roomNumber);
+        switch (accessLevel) {
+            case "high":
+                return true;
+            case "medium":
+                return roomStatus.equals("low") || roomStatus.equals("medium");
+            case "low":
+                return roomStatus.equals("low");
+            default:
+                return false;
         }
-        return false;
     }
 
     // Audit and Reporting
@@ -219,16 +257,33 @@ public class AccessControlSystem {
             return;
         }
 
+        // แยกวันที่เริ่มต้นและสิ้นสุด
+        String[] dates = dateRange.split(" to ");
+        long startDate = parseDateToMillis(dates[0]);
+        long endDate = parseDateToMillis(dates[1]);
+
         boolean hasLogs = false;
         System.out.println("Viewing card logs for card ID: " + cardId + " within date range: " + dateRange);
-        for (AccessLog log : accessLogs) {
-            if (log.getCardId().equals(cardId)) {
+        for (CardManagementLog log : cardManagementLogs) {
+            if (log.getCardId().equals(cardId) && log.getTimestamp() >= startDate && log.getTimestamp() <= endDate) {
                 System.out.println(log);
                 hasLogs = true;
             }
         }
         if (!hasLogs) {
             System.out.println("No logs found");
+        }
+    }
+
+    // เมธอดแปลงวันที่เป็น milliseconds
+    private long parseDateToMillis(String date) {
+        try {
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+            Date parsedDate = sdf.parse(date);
+            return parsedDate.getTime();
+        } catch (ParseException e) {
+            System.out.println("Invalid date format");
+            return 0;
         }
     }
 
@@ -253,6 +308,10 @@ public class AccessControlSystem {
         Floor floor = floors.getOrDefault(floorNumber, new Floor(String.valueOf(floorNumber), 0));
         floor.addRooms(numberOfRooms);
         floors.put(floorNumber, floor);
+        for (Room room : floor.getRooms()) {
+            String roomKey = String.format("%d%02d", floorNumber, room.getRoomNumber());
+            rooms.put(roomKey, room); // Update the rooms map
+        }
         System.out.println("Added " + numberOfRooms + " rooms to floor " + floorNumber + ".");
     }
 
@@ -368,9 +427,8 @@ public class AccessControlSystem {
 
     // addMultipleFloors
     public void addMultipleFloors(int startFloor, int endFloor, int roomsPerFloor) {
-        for (int floorNumber = startFloor; floorNumber <= endFloor; floorNumber++) {
-            Floor floor = new Floor(String.valueOf(floorNumber), roomsPerFloor);
-            floors.put(floorNumber, floor);
+        for (int i = startFloor; i <= endFloor; i++) {
+            addRoomsToFloor(i, roomsPerFloor);
         }
         System.out
                 .println("Added floors " + startFloor + " to " + endFloor + " with " + roomsPerFloor + " rooms each.");
@@ -434,6 +492,36 @@ public class AccessControlSystem {
         System.out.println("Added room " + roomNumber + " to floor " + floorNumber + ".");
     }
 
+    public User getUserById(String userId) {
+        return users.get(userId);
+    }
+
+    // View access logs
+    public void viewCardAccessLogs(String cardId, String dateRange) {
+        if (!dateRange.matches("\\d{4}-\\d{2}-\\d{2} to \\d{4}-\\d{2}-\\d{2}")) {
+            System.out.println("Invalid date range format (YYYY-MM-DD to YYYY-MM-DD)");
+            return;
+        }
+
+        // แยกวันที่เริ่มต้นและสิ้นสุด
+        String[] dates = dateRange.split(" to ");
+        long startDate = parseDateToMillis(dates[0]);
+        long endDate = parseDateToMillis(dates[1]);
+
+        boolean hasLogs = false;
+        System.out.println("Viewing card access logs for card ID: " + cardId + " within date range: " + dateRange);
+        for (AccessLog log : accessLogs) {
+            if (log.getCardId().equals(cardId) && log.getTimestamp() >= startDate && log.getTimestamp() <= endDate) {
+                System.out.println(log);
+                hasLogs = true;
+            }
+        }
+        if (!hasLogs) {
+            System.out.println("No logs found");
+        }
+    }
+
+    // Check room exists
     public boolean roomExists(int floorNumber, int roomNumber) {
         String roomKey = String.format("%d%02d", floorNumber, roomNumber);
         return rooms.containsKey(roomKey);

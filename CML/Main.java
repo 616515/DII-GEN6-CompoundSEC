@@ -154,20 +154,33 @@ public class Main {
                     case 1: // Add Card
                         System.out.print("Enter user ID: ");
                         String userId = scanner.nextLine();
+                        User user = system.getUserById(userId); // เรียกใช้เมธอด getUserById
+
+                        if (user == null) {
+                            System.out.println("User not found!");
+                            break;
+                        }
+
                         System.out.print("Enter validity period (YYYY-MM-DD): ");
                         String validityPeriod = scanner.nextLine();
                         System.out.print("Enter multi-facades ID (e.g., FAC-001): ");
                         String multiFacadesId = scanner.nextLine();
-                        System.out.print("Enter accessible floor number for low access level: ");
-                        int floorNumber = scanner.nextInt();
-                        System.out.print("Enter accessible room number for low access level: ");
-                        int roomNumber = scanner.nextInt();
-                        scanner.nextLine(); // Consume newline
-                        if (!system.roomExists(floorNumber, roomNumber)) {
-                            System.out.println("Room not found.");
-                            break;
+
+                        String accessibleRoom = "ALL"; // Default สำหรับ Admin
+
+                        if (user.getRole().equals("staff")) {
+                            System.out.print("Enter accessible floor number for medium access level: ");
+                            int floorNumber = scanner.nextInt();
+                            System.out.print("Enter accessible room number for medium access level: ");
+                            int roomNumber = scanner.nextInt();
+                            scanner.nextLine(); // Consume newline
+                            if (!system.roomExists(floorNumber, roomNumber)) {
+                                System.out.println("Room not found.");
+                                break;
+                            }
+                            accessibleRoom = String.format("%d%02d", floorNumber, roomNumber);
                         }
-                        String accessibleRoom = String.format("%d%02d", floorNumber, roomNumber);
+
                         String cardId = system.addCard(userId, validityPeriod, multiFacadesId, accessibleRoom);
                         if (cardId != null) {
                             System.out.println("Card added with ID: " + cardId);
@@ -181,7 +194,12 @@ public class Main {
                         System.out.print("Enter new validity period (YYYY-MM-DD): ");
                         String newValidityPeriod = scanner.nextLine();
                         system.modifyCard(editCardId, newAccessLevel, newValidityPeriod);
-                        System.out.println("Card modified.");
+                        if (editCardId == null) {
+                            System.out.println("Card not found.");
+                        } else {
+                            System.out.println("Card modified.");
+                        }
+
                         break;
                     case 3:// Delete Card
                         System.out.print("Enter card ID: ");
@@ -282,52 +300,42 @@ public class Main {
     private static void handleCheckEverything(AccessControlSystem system, Scanner scanner) {
         while (true) {
             System.out.println("\n--- Check Everything ---");
-            System.out.println("1. Check Access");
-            System.out.println("2. View Card Logs");
-            System.out.println("3. Print Building");
-            System.out.println("4. Check User Log Changes");
-            System.out.println("5. Check All Card Logs");
-            System.out.println("6. Screen IDs");
-            System.out.println("7. Exit");
+            System.out.println("1. View Card Logs");
+            System.out.println("2. Print Building");
+            System.out.println("3. Check User Log Changes");
+            System.out.println("4. Check All Card Logs");
+            System.out.println("5. Screen IDs");
+            System.out.println("6. Exit");
             System.out.print("Choose an option: ");
             try {
                 int checkChoice = scanner.nextInt();
                 scanner.nextLine(); // Consume newline
 
                 switch (checkChoice) {
-                    case 1:// Check Access
-                        System.out.print("Enter card ID: ");
-                        String cardID = scanner.nextLine();
-                        System.out.print("Enter floor level (low/medium/high): ");
-                        String floorLevel = scanner.nextLine();
-                        System.out.print("Enter room number: ");
-                        String roomNumber = scanner.nextLine();
-                        system.checkAccess(cardID, floorLevel, roomNumber);
-                        break;
-                    case 2:// View Card Logs
+                    case 1: // View Access Logs
                         System.out.print("Enter card ID: ");
                         String logCardID = scanner.nextLine();
                         System.out.print("Enter date range (e.g., 2023-01-01 to 2023-12-31): ");
                         String dateRange = scanner.nextLine();
                         system.viewCardLogs(logCardID, dateRange);
                         break;
-                    case 3:// Print Building
+                    case 2: // Print Building
                         system.printBuilding();
                         break;
-                    case 4:// Check User Log Changes
+                    case 3: // Check User Log Changes
                         System.out.print("Enter user ID: ");
                         String userId = scanner.nextLine();
                         system.checkUserLogChanges(userId);
                         break;
-                    case 5:// Check All Card Logs
+                    case 4: // Check All Card Logs
                         System.out.print("Enter date range (e.g., 2023-01-01 to 2023-12-31): ");
                         String allCardLogsDateRange = scanner.nextLine();
                         system.checkAllCardLogs(allCardLogsDateRange);
                         break;
-                    case 6:// Screen IDs
+                    case 5: // Screen IDs
                         system.screenId();
                         break;
-                    case 7:// Exit
+                    case 6: // Exit
                         return;
                     default:
                         System.out.println("Invalid option. Please try again.");
@@ -357,16 +365,23 @@ public class Main {
                         String userCard = scanner.nextLine();
                         System.out.print("Enter contact info: ");
                         String contactInfo = scanner.nextLine();
-                        System.out.print("Enter room number: ");
-                        String roomNumber = scanner.nextLine();
-                        if (system.checkRoomAccess(userId, userCard, contactInfo, roomNumber)) {
+                        System.out.print("Enter accessible floor number level: ");
+                        int floorNumber = scanner.nextInt();
+                        System.out.print("Enter accessible room number level: ");
+                        int roomNumber = scanner.nextInt();
+                        scanner.nextLine(); // Consume newline
+
+                        // เรียกเมธอด checkRoomAccess ด้วยข้อมูลที่แปลงแล้ว
+                        if (system.checkRoomAccess(userId, userCard, contactInfo, floorNumber, roomNumber)) {
                             System.out.println("Access granted.");
                         } else {
                             System.out.println("Access denied.");
                         }
                         break;
-                    case 2:// Exit
+
+                    case 2: // Exit
                         return;
+
                     default:
                         System.out.println("Invalid option. Please try again.");
                 }

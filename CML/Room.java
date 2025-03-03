@@ -23,6 +23,6 @@ public class Room {
 
     @Override
     public String toString() {
-        return "Classroom " + roomNumber + " - Status: " + status;
+        return "Room " + roomNumber + " - Status: " + status;
     }
 }

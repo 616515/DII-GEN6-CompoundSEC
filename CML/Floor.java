@@ -21,6 +21,10 @@ public class Floor {
         return rooms;
     }
 
+    public Room getRoom(int roomNumber) {
+        return rooms.get(roomNumber);
+    }
+
     public void addRooms(int numberOfRooms) {
         for (int i = 1; i <= numberOfRooms; i++) {
             rooms.add(new Room(i, "low")); // Default status is "low"

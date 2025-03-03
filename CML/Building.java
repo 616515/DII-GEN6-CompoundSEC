@@ -36,12 +36,12 @@ public class Building {
 
     // Print all rooms in the building
     public void printBuilding() {
-        for (Floor floor : floors) {
-            System.out.println("Floor: " + floor.getFloorNumber());
+        for (Floor floor : floors) { // ใช้ for-each loop สำหรับ List<Floor>
+            System.out.println("Floor: " + floor.getFloorNumber()); // แสดงหมายเลขชั้น
             for (Room room : floor.getRooms()) {
-                System.out.println("  " + room);
+                System.out.println("  " + room); // แสดงห้องแต่ละห้องในชั้น
             }
-            System.out.println();
+            System.out.println(); // เพิ่มบรรทัดว่างระหว่างชั้น
         }
     }
 
