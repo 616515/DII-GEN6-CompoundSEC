@@ -165,13 +165,18 @@ public class Main {
                         String validityPeriod = scanner.nextLine();
                         System.out.print("Enter multi-facades ID (e.g., FAC-001): ");
                         String multiFacadesId = scanner.nextLine();
+                        if (multiFacadesId == null) {
+                            System.out.println("Invalid multi-facades ID. Please enter 'FAC-001'.");
+                            break;
+                        } else {
 
+                        }
                         String accessibleRoom = "ALL"; // Default สำหรับ Admin
 
-                        if (user.getRole().equals("staff")) {
-                            System.out.print("Enter accessible floor number for medium access level: ");
+                        if (user.getRole().equals("customer")) {
+                            System.out.print("Enter accessible floor number for low access level: ");
                             int floorNumber = scanner.nextInt();
-                            System.out.print("Enter accessible room number for medium access level: ");
+                            System.out.print("Enter accessible room number for low access level: ");
                             int roomNumber = scanner.nextInt();
                             scanner.nextLine(); // Consume newline
                             if (!system.roomExists(floorNumber, roomNumber)) {

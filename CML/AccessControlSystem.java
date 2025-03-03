@@ -54,6 +54,21 @@ public class AccessControlSystem {
 
         String cardId = String.format("%03d", nextCardId++); // สร้าง cardId
 
+        String[] roomDetails = accessibleRoom.split("-");
+        String floorNumber = roomDetails[0];
+        int roomNumber = Integer.parseInt(roomDetails[1]);
+
+        Building building = new Building();
+        Floor floor = building.getFloors().stream()
+                .filter(f -> f.getFloorNumber().equals(floorNumber))
+                .findFirst()
+                .orElse(null);
+
+        if (floor == null || floor.getRoom(roomNumber) == null) {
+            System.out.println("Room not found.");
+            return null;
+        }
+
         cards.put(cardId, new Card(cardId, userId, accessLevel, validityPeriod, multiFacadesId, accessibleRoom));
 
         // บันทึกล็อกเมื่อเพิ่มการ์ด
@@ -96,6 +111,17 @@ public class AccessControlSystem {
     public void checkAccess(String cardId, String floorLevel, String roomNumber) {
         if (!floorLevel.matches("low|medium|high")) {
             System.out.println("Invalid floor level");
+            return;
+        }
+
+        Building building = new Building();
+        Floor floor = building.getFloors().stream()
+                .filter(f -> f.getFloorNumber().equals(floorLevel))
+                .findFirst()
+                .orElse(null);
+
+        if (floor == null || floor.getRoom(Integer.parseInt(roomNumber)) == null) {
+            System.out.println("Room not found.");
             return;
         }
 

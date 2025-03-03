@@ -31,6 +31,13 @@ public class Floor {
         return rooms.get(roomNumber - 1);
     }
 
+    public void addRooms(int numberOfRooms) {
+        int currentSize = rooms.size();
+        for (int i = 1; i <= numberOfRooms; i++) {
+            rooms.add(new Room(currentSize + i, "low")); // Default status is "low"
+        }
+    }
+
     public void deleteRoom(int roomNumber) {
         if (roomNumber < 1 || roomNumber > rooms.size()) {
             System.out.println("Room number " + roomNumber + " is out of bounds.");
